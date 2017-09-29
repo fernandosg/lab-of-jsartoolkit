@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<title>Checking position with JSArtoolkit5</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1">
+<style>
+html,body {
+	margin: 0;
+	padding: 0;
+	width: 100%;
+	text-align: center;
+	overflow-x: hidden;
+}
+.portrait canvas {
+	transform-origin: 0 0;
+	transform: rotate(-90deg) translateX(-100%);
+}
+.desktop canvas {
+ 	transform: scale(-1, 1);
+}
+</style>
+</head>
+<body>
+<h1>Simple PlaneObject with JSArtoolkit5</h1>
+<div id="container"></div>
+<script src="js/artoolkit.min.js"></script>
+<script src="js/three.min.js"></script>
+<script src="js/artoolkit.three.js"></script>
+
+<script>
+var markerRoot;
+var arctrl,scene;
+window.ARThreeOnLoad = function() {
+
+	ARController.getUserMediaThreeScene({maxARVideoSize: 320, cameraParam: 'data/camera_para-iPhone_5_rear_640x480_1.0m.dat',
+	onSuccess: function(arScene, arController, arCamera) {
+		scene=arScene.scene;
+		document.body.className = arController.orientation;
+		arctrl=arController;
+		//console.dir(arController);
+		var renderer = new THREE.WebGLRenderer({antialias: true});
+		if (arController.orientation === 'portrait') {
+			var w = (window.innerWidth / arController.videoHeight) * arController.videoWidth;
+			var h = window.innerWidth;
+			renderer.setSize(w, h);
+			renderer.domElement.style.paddingBottom = (w-h) + 'px';
+		} else {
+			if (/Android|mobile|iPad|iPhone/i.test(navigator.userAgent)) {
+				renderer.setSize(window.innerWidth, (window.innerWidth / arController.videoWidth) * arController.videoHeight);
+			} else {
+				renderer.setSize(arController.videoWidth, arController.videoHeight);
+				document.body.className += ' desktop';
+			}
+		}
+
+		document.body.insertBefore(renderer.domElement, document.body.firstChild);
+
+		var rotationV = 0;
+		var rotationTarget = 0;
+
+		renderer.domElement.addEventListener('click', function(ev) {
+			ev.preventDefault();
+			rotationTarget += 1;
+		}, false);
+
+		var sphere = new THREE.Mesh(
+			new THREE.SphereGeometry(0.5, 8, 8),
+			new THREE.MeshNormalMaterial()
+		);
+		sphere.material.shading = THREE.FlatShading;
+		sphere.position.z = 0.5;
+
+		arController.loadMarker('data/patt.hiro', function(markerId) {
+			markerRoot = arController.createThreeMarker(markerId);
+			markerRoot.add(sphere);
+			arScene.scene.add(markerRoot);
+		});
+
+		arController.addEventListener('getMarker', function (ev) {
+			if(ev.data.type==0){
+				if(ev.data.index==0){
+					information=ev;
+				}
+			}
+		});
+
+
+
+		var tick = function() {
+			arScene.process();
+			rotationV += (rotationTarget - sphere.rotation.z) * 0.05;
+			sphere.rotation.z += rotationV;
+			rotationV *= 0.8;
+
+			arScene.renderOn(renderer);
+			requestAnimationFrame(tick);
+		};
+		extra_ob = new THREE.Mesh(
+			new THREE.SphereGeometry(0.5, 8, 8),
+			new THREE.MeshNormalMaterial()
+		);
+		//extra_ob.matrixAutoUpdate=false;
+		scene.add(extra_ob);
+		extra_ob.position.z=5.5;
+		//extra_ob.updateMatrixWorld();
+		tick();
+
+	}});
+
+	delete window.ARThreeOnLoad;
+
+};
+
+if (window.ARController && ARController.getUserMediaThreeScene) {
+	ARThreeOnLoad();
+	//extra_ob=new THREE.Object3D();
+
+}
+</script>
+
+</body>
+</html>
