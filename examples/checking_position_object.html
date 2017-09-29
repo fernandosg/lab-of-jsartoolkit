@@ -32,9 +32,10 @@ var markerRoot;
 var arctrl,scene;
 window.ARThreeOnLoad = function() {
 
-	ARController.getUserMediaThreeScene({maxARVideoSize: 320, cameraParam: 'data/camera_para-iPhone_5_rear_640x480_1.0m.dat',
+	ARController.getUserMediaThreeScene({maxARVideoSize: 320, cameraParam: 'data/camera_para.dat',
 	onSuccess: function(arScene, arController, arCamera) {
 		scene=arScene.scene;
+		sceneGlobal=arScene;
 		document.body.className = arController.orientation;
 		arctrl=arController;
 		//console.dir(arController);
@@ -88,10 +89,8 @@ window.ARThreeOnLoad = function() {
 
 		var tick = function() {
 			arScene.process();
-			rotationV += (rotationTarget - sphere.rotation.z) * 0.05;
-			sphere.rotation.z += rotationV;
-			rotationV *= 0.8;
-
+			if(markerRoot!=undefined && markerRoot.visible)
+				compareDistance(markerRoot.getWorldPosition(),extra_ob.position);
 			arScene.renderOn(renderer);
 			requestAnimationFrame(tick);
 		};
@@ -101,7 +100,7 @@ window.ARThreeOnLoad = function() {
 		);
 		//extra_ob.matrixAutoUpdate=false;
 		scene.add(extra_ob);
-		extra_ob.position.z=5.5;
+		extra_ob.position.z=10;
 		//extra_ob.updateMatrixWorld();
 		tick();
 
@@ -111,10 +110,16 @@ window.ARThreeOnLoad = function() {
 
 };
 
+
 if (window.ARController && ARController.getUserMediaThreeScene) {
 	ARThreeOnLoad();
-	//extra_ob=new THREE.Object3D();
 
+}
+
+function compareDistance(obj1_position,obj2_position){
+	if(obj1_position.distanceTo(obj2_position)<=2){
+		console.log("Closed one");
+	}
 }
 </script>
 
